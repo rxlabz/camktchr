@@ -161,10 +161,9 @@ class Snapr extends React.Component {
 
     onCloseCamRequest = (e) => {
         console.log("onCloseCamRequest");
-        this.closeCam();
-    }
 
-    closeCam() {
+        if(!this.state.cam)
+            return;
         this.state.cam.off();
         this.setState({cam: null});
     }
