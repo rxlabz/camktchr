@@ -66,10 +66,14 @@ var Cam = (function () {
         this.onStream = function (stream) {
             console.log('onStream...', _this);
             _this.stream = stream;
-            _this.xMedia = new XMedia(stream);
-            _this.successHandler(stream);
 
+            _this.xMedia = new XMedia(stream);
             _this.xMedia.startCam(_this.videoElement);
+
+            // success callback only after camera initialization
+            _this.videoElement.addEventListener('canplay', function (e) {
+                return _this.successHandler(stream);
+            });
         };
     }
 
@@ -118,23 +122,21 @@ var Snapr = (function (_React$Component) {
     }, {
         key: 'currentUIState',
         get: function get() {
-            if (!this.state || this.state && !this.state.cam) {
-                return Snapr.UIStates.OFF;
+            if (this.state.wait == true) {
+                return Snapr.UIStates.WAIT;
             } else if (this.state.cam && !this.state.img) {
                 return Snapr.UIStates.CAM;
+            } else if (!this.state.cam) {
+                return Snapr.UIStates.OFF;
             } else if (this.state.img) {
                 return Snapr.UIStates.IMG;
             }
         }
     }], [{
         key: 'UIStates',
-
-        /**
-         * es7 class static properties
-         * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
-         */
         value: {
             OFF: "off",
+            WAIT: "wait",
             CAM: "cam",
             IMG: "img"
         },
@@ -150,20 +152,27 @@ var Snapr = (function (_React$Component) {
         this.BUTTON_BAR_HEIGHT = 32;
         this.CAM_WIDTH = 640;
         this.CAM_HEIGHT = 480;
+        this.state = {
+            wait: false,
+            cam: null,
+            img: null
+        };
 
         this.activateCam = function (e) {
             var cam = new Cam();
-            _this2.setState({ cam: cam });
+            _this2.setState({ wait: true });
             cam.init(_this2.video, function (stream) {
                 console.log("snapr.onStream");
+                _this2.setState({ cam: cam });
+                _this2.setState({ wait: false });
             }, function (err) {
                 console.log("[snapr] An error occured! " + err);
             });
         };
 
         this.captureCam = function (e) {
-            console.log('captureCam()...');
-            if (_this2.currentUIState == Snapr.UIStates.IMG) {
+            console.log('captureCam()... ', _this2.currentUIState);
+            if (_this2.currentUIState == Snapr.UIStates.CAM) {
                 _this2.canvas.getContext('2d').drawImage(_this2.video, 0, 0, _this2.video.width, _this2.video.height);
                 _this2.setState({ img: _this2.canvas.toDataURL('image/png') });
             }
@@ -178,6 +187,13 @@ var Snapr = (function (_React$Component) {
             _this2.closeCam();
         };
     }
+
+    /*
+     * ES6 arrow function & ES7 property initializer to avoid .bind(this)
+     * on every child-injected methods
+     * http://babeljs.io/blog/2015/06/07/react-on-es6-plus/
+     * http://egorsmirnov.me/2015/08/16/react-and-es6-part3.html
+     */
 
     _createClass(Snapr, [{
         key: 'closeCam',
@@ -217,29 +233,17 @@ var Snapr = (function (_React$Component) {
                         width: this.CAM_WIDTH, height: this.CAM_HEIGHT,
                         style: styles.video })
                 ),
-                React.createElement(SnaprButtonBar, { onActivateCamRequest: this.activateCam,
+                React.createElement(SnaprButtonBar, { height: this.BUTTON_BAR_HEIGHT,
+                    width: this.CAM_WIDTH,
+                    currentState: this.currentUIState,
+                    imgData: this.state.img,
+                    onActivateCamRequest: this.activateCam,
                     onCloseCamRequest: this.onCloseCamRequest,
                     captureCam: this.captureCam,
-                    cancelCapture: this.cancelCapture,
-                    imgData: this.imgData,
-                    currentState: this.currentUIState,
-                    height: this.BUTTON_BAR_HEIGHT,
-                    width: this.CAM_WIDTH
+                    cancelCapture: this.cancelCapture
                 })
             );
         }
-    }, {
-        key: 'imgData',
-        get: function get() {
-            return this.state && this.state.img ? this.state.img : null;
-        }
-
-        /*
-         * ES6 arrow function & ES7 property initializer to avoid .bind(this)
-         * on every child-injected methods
-         * http://babeljs.io/blog/2015/06/07/react-on-es6-plus/
-         * http://egorsmirnov.me/2015/08/16/react-and-es6-part3.html
-         */
     }]);
 
     return Snapr;
@@ -269,7 +273,8 @@ var SnaprButtonBar = (function (_React$Component2) {
             },
             Button: { margin: "0 10px" },
             visible: { display: 'inline' },
-            hidden: { display: 'none' }
+            hidden: { display: 'none' },
+            message: { fontSize: 0.8 + 'em' }
         };
 
         this.saveImg = function (e) {
@@ -287,6 +292,7 @@ var SnaprButtonBar = (function (_React$Component2) {
             this.styles.btSave = this.uiStateStyle('img', this.styles.Button);
             this.styles.btCancel = this.uiStateStyle('img', this.styles.Button);
             this.styles.btStopCam = this.uiStateStyle('cam', this.styles.Button);
+            this.styles.msgWait = this.uiStateStyle('wait', this.styles.message);
         }
 
         /**
@@ -303,7 +309,7 @@ var SnaprButtonBar = (function (_React$Component2) {
     }, {
         key: 'displayInState',
         value: function displayInState(uiState) {
-            return this.props.currentUIState == uiState ? this.styles.visible : this.styles.hidden;
+            return this.props.currentState == uiState ? this.styles.visible : this.styles.hidden;
         }
     }, {
         key: 'render',
@@ -322,18 +328,23 @@ var SnaprButtonBar = (function (_React$Component2) {
                     'span',
                     { style: this.styles.ButtonGroup },
                     React.createElement(
+                        'span',
+                        { style: this.styles.msgWait },
+                        'Camera Initialization...'
+                    ),
+                    React.createElement(
                         'button',
                         { style: this.styles.btActivate,
                             onClick: this.props.onActivateCamRequest
                         },
-                        'Activate'
+                        'Activate camera'
                     ),
                     React.createElement(
                         'button',
                         { style: this.styles.btCapture,
                             onClick: this.props.captureCam
                         },
-                        'Capture'
+                        'Capture image'
                     ),
                     React.createElement(
                         'a',
@@ -344,7 +355,7 @@ var SnaprButtonBar = (function (_React$Component2) {
                         React.createElement(
                             'button',
                             null,
-                            'Save'
+                            'Save image'
                         )
                     ),
                     React.createElement(
@@ -352,13 +363,13 @@ var SnaprButtonBar = (function (_React$Component2) {
                         { style: this.styles.btCancel,
                             onClick: this.props.cancelCapture
                         },
-                        'Cancel'
+                        'Back to camera'
                     ),
                     React.createElement(
                         'button',
                         { style: this.styles.btStopCam,
                             onClick: this.props.onCloseCamRequest },
-                        'Stop Cam'
+                        'Stop Camera'
                     )
                 )
             );
@@ -369,3 +380,8 @@ var SnaprButtonBar = (function (_React$Component2) {
 })(React.Component);
 
 ReactDOM.render(React.createElement(Snapr, null), document.getElementById("snapr"));
+
+/*
+ * es7 class static properties
+ * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
+ */

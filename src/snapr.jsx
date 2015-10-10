@@ -29,7 +29,7 @@ class XMedia {
             this.stream.stop();
             this.stream.mozSrcObject = null;
         }
-        else if(navigator.webkitGetUserMedia){
+        else if (navigator.webkitGetUserMedia) {
             this.stream.getVideoTracks()[0].stop();
             this.stream.src = '';
         } else {
@@ -54,10 +54,12 @@ class Cam {
     onStream = (stream) => {
         console.log('onStream...', this);
         this.stream = stream;
-        this.xMedia = new XMedia(stream);
-        this.successHandler(stream);
 
+        this.xMedia = new XMedia(stream);
         this.xMedia.startCam(this.videoElement);
+
+        // success callback only after camera initialization
+        this.videoElement.addEventListener('canplay', e => this.successHandler(stream));
     }
 
     off() {
@@ -75,18 +77,28 @@ class Cam {
  */
 class Snapr extends React.Component {
 
-    BUTTON_BAR_HEIGHT = 32;
-    CAM_WIDTH = 640;
-    CAM_HEIGHT = 480;
-
-    /**
+    /*
      * es7 class static properties
      * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
      */
+
+    BUTTON_BAR_HEIGHT = 32;
+
+    CAM_WIDTH = 640;
+
+    CAM_HEIGHT = 480;
+
     static UIStates = {
         OFF: "off",
+        WAIT: "wait",
         CAM: "cam",
         IMG: "img"
+    }
+
+    state = {
+        wait: false,
+        cam: null,
+        img: null
     }
 
     get video() {
@@ -98,10 +110,12 @@ class Snapr extends React.Component {
     }
 
     get currentUIState() {
-        if (!this.state || (this.state && !this.state.cam)) {
-            return Snapr.UIStates.OFF;
+        if (this.state.wait == true) {
+            return Snapr.UIStates.WAIT;
         } else if (this.state.cam && !this.state.img) {
             return Snapr.UIStates.CAM;
+        } else if (!this.state.cam) {
+            return Snapr.UIStates.OFF;
         } else if (this.state.img) {
             return Snapr.UIStates.IMG;
         }
@@ -109,10 +123,6 @@ class Snapr extends React.Component {
 
     constructor(props) {
         super(props);
-    }
-
-    get imgData() {
-        return this.state && this.state.img ? this.state.img : null;
     }
 
     /*
@@ -123,28 +133,30 @@ class Snapr extends React.Component {
      */
     activateCam = (e) => {
         var cam = new Cam();
-        this.setState({cam: cam});
+        this.setState({wait: true});
         cam.init(
             this.video,
-            function (stream) {
+            (stream) => {
                 console.log("snapr.onStream");
+                this.setState({cam: cam});
+                this.setState({wait: false});
             },
-            function (err) {
+            (err) => {
                 console.log("[snapr] An error occured! " + err);
             }
         );
     }
 
     captureCam = (e) => {
-        console.log('captureCam()...');
-        if (this.currentUIState == Snapr.UIStates.IMG) {
+        console.log('captureCam()... ', this.currentUIState);
+        if (this.currentUIState == Snapr.UIStates.CAM) {
             this.canvas.getContext('2d').drawImage(this.video, 0, 0, this.video.width, this.video.height);
             this.setState({img: this.canvas.toDataURL('image/png')});
         }
     }
 
-    cancelCapture = (e)=>{
-        this.setState({img:null});
+    cancelCapture = (e)=> {
+        this.setState({img: null});
     }
 
     onCloseCamRequest = (e) => {
@@ -171,27 +183,27 @@ class Snapr extends React.Component {
             }
         };
 
-        styles.video = (this.currentUIState != Snapr.UIStates.CAM) ? {display:'none'} : {};
-        styles.canvas = (this.currentUIState != Snapr.UIStates.IMG) ? {display:'none'} : {};
+        styles.video = (this.currentUIState != Snapr.UIStates.CAM) ? {display: 'none'} : {};
+        styles.canvas = (this.currentUIState != Snapr.UIStates.IMG) ? {display: 'none'} : {};
 
         return (
             <div style={styles.container}>
                 <div style={styles.camDisplay}>
                     <canvas ref="canvas"
                             width={this.CAM_WIDTH} height={this.CAM_HEIGHT}
-                            style={styles.canvas} />
+                            style={styles.canvas}/>
                     <video ref="video"
                            width={this.CAM_WIDTH} height={this.CAM_HEIGHT}
-                           style={styles.video} />
+                           style={styles.video}/>
                 </div>
-                <SnaprButtonBar onActivateCamRequest={this.activateCam}
+                <SnaprButtonBar height={this.BUTTON_BAR_HEIGHT}
+                                width={this.CAM_WIDTH}
+                                currentState={this.currentUIState}
+                                imgData={this.state.img}
+                                onActivateCamRequest={this.activateCam}
                                 onCloseCamRequest={this.onCloseCamRequest}
                                 captureCam={this.captureCam}
                                 cancelCapture={this.cancelCapture}
-                                imgData={this.imgData}
-                                currentState={this.currentUIState}
-                                height={this.BUTTON_BAR_HEIGHT}
-                                width={this.CAM_WIDTH}
                 />
             </div>
         );
@@ -204,18 +216,19 @@ class SnaprButtonBar extends React.Component {
         ButtonBar: {
             backgroundColor: '#E0E0E0',
             height: this.props.height,
-            width:this.props.width,
-            lineHeight: this.props.height+'px'
+            width: this.props.width,
+            lineHeight: this.props.height + 'px'
         },
         ButtonGroup: {
             display: 'inline-block',
             width: 460,
-            height: this.props.height ,
+            height: this.props.height,
             textAlign: 'center'
         },
-        Button: { margin: "0 10px" },
-        visible: { display: 'inline' },
-        hidden: { display: 'none' }
+        Button: {margin: "0 10px"},
+        visible: {display: 'inline'},
+        hidden: {display: 'none'},
+        message: {fontSize: 0.8 + 'em'}
     }
 
     constructor(props) {
@@ -228,12 +241,13 @@ class SnaprButtonBar extends React.Component {
         this.refs.btSave.href = data;
     }
 
-    updateStyles(){
+    updateStyles() {
         this.styles.btActivate = this.uiStateStyle('off', this.styles.Button);
         this.styles.btCapture = this.uiStateStyle('cam', this.styles.Button);
-        this.styles.btSave= this.uiStateStyle('img', this.styles.Button);
+        this.styles.btSave = this.uiStateStyle('img', this.styles.Button);
         this.styles.btCancel = this.uiStateStyle('img', this.styles.Button);
         this.styles.btStopCam = this.uiStateStyle('cam', this.styles.Button);
+        this.styles.msgWait = this.uiStateStyle('wait', this.styles.message);
     }
 
     /**
@@ -242,12 +256,12 @@ class SnaprButtonBar extends React.Component {
      * @param styleBase
      * @returns {*}
      */
-    uiStateStyle(includeIn, styleBase){
+    uiStateStyle(includeIn, styleBase) {
         return Object.assign({}, styleBase, this.displayInState(includeIn))
     }
 
-    displayInState(uiState){
-        return this.props.currentUIState == uiState ? this.styles.visible : this.styles.hidden
+    displayInState(uiState) {
+        return this.props.currentState == uiState ? this.styles.visible : this.styles.hidden
     }
 
     render() {
@@ -258,30 +272,32 @@ class SnaprButtonBar extends React.Component {
                 <span>CamSnapr</span>
                     <span style={this.styles.ButtonGroup}>
 
+                        <span style={this.styles.msgWait}>Camera Initialization...</span>
+
                         <button style={this.styles.btActivate}
-                            onClick={this.props.onActivateCamRequest}
-                        >Activate
+                                onClick={this.props.onActivateCamRequest}
+                        >Activate camera
                         </button>
 
                         <button style={this.styles.btCapture}
                                 onClick={this.props.captureCam}
-                        >Capture
+                        >Capture image
                         </button>
 
                         <a href="#" ref="btSave" style={this.styles.btSave}
                            download="img.png"
                            onClick={this.saveImg}
                         >
-                            <button>Save</button>
+                            <button>Save image</button>
                         </a>
 
                         <button style={this.styles.btCancel}
                                 onClick={this.props.cancelCapture}
-                        >Cancel
+                        >Back to camera
                         </button>
 
                         <button style={this.styles.btStopCam}
-                                onClick={this.props.onCloseCamRequest}>Stop Cam
+                                onClick={this.props.onCloseCamRequest}>Stop Camera
                         </button>
                     </span>
             </div>
