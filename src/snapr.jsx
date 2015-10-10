@@ -72,15 +72,11 @@ class Cam {
 /**
  * composant de capture WebCam
  * trois état d'ui :
- *
- * transpiled with : babel --stage 0
+ * use es7 class static properties
+ * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
+ * needs babel --stage 0
  */
 class Snapr extends React.Component {
-
-    /*
-     * es7 class static properties
-     * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
-     */
 
     BUTTON_BAR_HEIGHT = 32;
 
@@ -88,6 +84,9 @@ class Snapr extends React.Component {
 
     CAM_HEIGHT = 480;
 
+    /**
+     * components uiStates definition
+     */
     static UIStates = {
         OFF: "off",
         WAIT: "wait",
@@ -95,8 +94,11 @@ class Snapr extends React.Component {
         IMG: "img"
     }
 
+    /**
+     * initial state
+     */
     state = {
-        wait: false,
+        isWaiting: false,
         cam: null,
         img: null
     }
@@ -110,7 +112,7 @@ class Snapr extends React.Component {
     }
 
     get currentUIState() {
-        if (this.state.wait == true) {
+        if (this.state.isWaiting == true) {
             return Snapr.UIStates.WAIT;
         } else if (this.state.cam && !this.state.img) {
             return Snapr.UIStates.CAM;
@@ -133,13 +135,13 @@ class Snapr extends React.Component {
      */
     activateCam = (e) => {
         var cam = new Cam();
-        this.setState({wait: true});
+        this.setState({isWaiting: true});
         cam.init(
             this.video,
             (stream) => {
                 console.log("snapr.onStream");
                 this.setState({cam: cam});
-                this.setState({wait: false});
+                this.setState({isWaiting: false});
             },
             (err) => {
                 console.log("[snapr] An error occured! " + err);
