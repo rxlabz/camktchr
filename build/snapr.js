@@ -3,9 +3,13 @@
  */
 'use strict';
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
@@ -80,8 +84,9 @@ var Cam = (function () {
     /**
      * composant de capture WebCam
      * trois état d'ui :
-     *
-     * transpiled with : babel --stage 0
+     * use es7 class static properties
+     * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
+     * needs babel --stage 0
      */
 
     _createClass(Cam, [{
@@ -122,7 +127,7 @@ var Snapr = (function (_React$Component) {
     }, {
         key: 'currentUIState',
         get: function get() {
-            if (this.state.wait == true) {
+            if (this.state.isWaiting == true) {
                 return Snapr.UIStates.WAIT;
             } else if (this.state.cam && !this.state.img) {
                 return Snapr.UIStates.CAM;
@@ -134,12 +139,20 @@ var Snapr = (function (_React$Component) {
         }
     }], [{
         key: 'UIStates',
+
+        /**
+         * components uiStates definition
+         */
         value: {
             OFF: "off",
             WAIT: "wait",
             CAM: "cam",
             IMG: "img"
         },
+
+        /**
+         * initial state
+         */
         enumerable: true
     }]);
 
@@ -153,18 +166,18 @@ var Snapr = (function (_React$Component) {
         this.CAM_WIDTH = 640;
         this.CAM_HEIGHT = 480;
         this.state = {
-            wait: false,
+            isWaiting: false,
             cam: null,
             img: null
         };
 
         this.activateCam = function (e) {
             var cam = new Cam();
-            _this2.setState({ wait: true });
+            _this2.setState({ isWaiting: true });
             cam.init(_this2.video, function (stream) {
                 console.log("snapr.onStream");
                 _this2.setState({ cam: cam });
-                _this2.setState({ wait: false });
+                _this2.setState({ isWaiting: false });
             }, function (err) {
                 console.log("[snapr] An error occured! " + err);
             });
@@ -184,7 +197,10 @@ var Snapr = (function (_React$Component) {
 
         this.onCloseCamRequest = function (e) {
             console.log("onCloseCamRequest");
-            _this2.closeCam();
+
+            if (!_this2.state.cam) return;
+            _this2.state.cam.off();
+            _this2.setState({ cam: null });
         };
     }
 
@@ -196,12 +212,6 @@ var Snapr = (function (_React$Component) {
      */
 
     _createClass(Snapr, [{
-        key: 'closeCam',
-        value: function closeCam() {
-            this.state.cam.off();
-            this.setState({ cam: null });
-        }
-    }, {
         key: 'render',
         value: function render() {
             var styles = {
@@ -249,8 +259,20 @@ var Snapr = (function (_React$Component) {
     return Snapr;
 })(React.Component);
 
-var SnaprButtonBar = (function (_React$Component2) {
-    _inherits(SnaprButtonBar, _React$Component2);
+var CaptureDisplay = (function (_React$Component2) {
+    _inherits(CaptureDisplay, _React$Component2);
+
+    function CaptureDisplay() {
+        _classCallCheck(this, CaptureDisplay);
+
+        _get(Object.getPrototypeOf(CaptureDisplay.prototype), 'constructor', this).apply(this, arguments);
+    }
+
+    return CaptureDisplay;
+})(React.Component);
+
+var SnaprButtonBar = (function (_React$Component3) {
+    _inherits(SnaprButtonBar, _React$Component3);
 
     function SnaprButtonBar(props) {
         var _this3 = this;
@@ -276,23 +298,36 @@ var SnaprButtonBar = (function (_React$Component2) {
             hidden: { display: 'none' },
             message: { fontSize: 0.8 + 'em' }
         };
+        this.compStates = [{ name: 'btActivate', includeIn: 'off', basedOn: 'Button' }, { name: 'btCapture', includeIn: 'cam', basedOn: 'Button' }, { name: 'btStopCam', includeIn: 'cam', basedOn: 'Button' }, { name: 'btSave', includeIn: 'img', basedOn: 'Button' }, { name: 'btCancel', includeIn: 'img', basedOn: 'Button' }, { name: 'msgWait', includeIn: 'wait', basedOn: 'message' }];
 
         this.saveImg = function (e) {
             console.log("saveImg()...", _this3.refs.btSave);
             var data = _this3.props.imgData;
             _this3.refs.btSave.href = data;
         };
+
+        this.uiStateStyle = function (includeIn, styleBase) {
+            return _extends({}, styleBase, _this3.displayInState(includeIn));
+        };
+
+        this.displayInState = function (uiState) {
+            return _this3.props.currentState == uiState ? _this3.styles.visible : _this3.styles.hidden;
+        };
     }
 
     _createClass(SnaprButtonBar, [{
         key: 'updateStyles',
         value: function updateStyles() {
-            this.styles.btActivate = this.uiStateStyle('off', this.styles.Button);
-            this.styles.btCapture = this.uiStateStyle('cam', this.styles.Button);
-            this.styles.btSave = this.uiStateStyle('img', this.styles.Button);
-            this.styles.btCancel = this.uiStateStyle('img', this.styles.Button);
-            this.styles.btStopCam = this.uiStateStyle('cam', this.styles.Button);
-            this.styles.msgWait = this.uiStateStyle('wait', this.styles.message);
+            var _this4 = this;
+
+            // object assign shorthand
+            this.styles = _extends({}, this.styles, this.compStates.map(function (item) {
+                return _defineProperty({}, item.name, _this4.uiStateStyle(item.includeIn, _this4.styles[item.basedOn]));
+            }));
+
+            /*Object.assign(this.styles, ...this.compStates.map(item => {
+                return ( {[item.name]: this.uiStateStyle(item.includeIn, this.styles[item.basedOn]) } )
+            }));*/
         }
 
         /**
@@ -301,16 +336,6 @@ var SnaprButtonBar = (function (_React$Component2) {
          * @param styleBase
          * @returns {*}
          */
-    }, {
-        key: 'uiStateStyle',
-        value: function uiStateStyle(includeIn, styleBase) {
-            return Object.assign({}, styleBase, this.displayInState(includeIn));
-        }
-    }, {
-        key: 'displayInState',
-        value: function displayInState(uiState) {
-            return this.props.currentState == uiState ? this.styles.visible : this.styles.hidden;
-        }
     }, {
         key: 'render',
         value: function render() {
@@ -380,8 +405,3 @@ var SnaprButtonBar = (function (_React$Component2) {
 })(React.Component);
 
 ReactDOM.render(React.createElement(Snapr, null), document.getElementById("snapr"));
-
-/*
- * es7 class static properties
- * cf. https://github.com/jeffmo/es-class-static-properties-and-fields
- */

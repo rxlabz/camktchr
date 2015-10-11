@@ -164,7 +164,7 @@ class Snapr extends React.Component {
     onCloseCamRequest = (e) => {
         console.log("onCloseCamRequest");
 
-        if(!this.state.cam)
+        if (!this.state.cam)
             return;
         this.state.cam.off();
         this.setState({cam: null});
@@ -211,6 +211,10 @@ class Snapr extends React.Component {
     }
 }
 
+/**
+ * Button bar : multistates » display buttons for differents states
+ * » states behaviour is defnineda compStates
+ */
 class SnaprButtonBar extends React.Component {
 
     styles = {
@@ -232,6 +236,15 @@ class SnaprButtonBar extends React.Component {
         message: {fontSize: 0.8 + 'em'}
     }
 
+    compStates = [
+        {name: 'btActivate', includeIn: 'off', basedOn: 'Button'},
+        {name: 'btCapture', includeIn: 'cam', basedOn: 'Button'},
+        {name: 'btStopCam', includeIn: 'cam', basedOn: 'Button'},
+        {name: 'btSave', includeIn: 'img', basedOn: 'Button'},
+        {name: 'btCancel', includeIn: 'img', basedOn: 'Button'},
+        {name: 'msgWait', includeIn: 'wait', basedOn: 'message'}
+    ]
+
     constructor(props) {
         super(props);
     }
@@ -243,12 +256,10 @@ class SnaprButtonBar extends React.Component {
     }
 
     updateStyles() {
-        this.styles.btActivate = this.uiStateStyle('off', this.styles.Button);
-        this.styles.btCapture = this.uiStateStyle('cam', this.styles.Button);
-        this.styles.btSave = this.uiStateStyle('img', this.styles.Button);
-        this.styles.btCancel = this.uiStateStyle('img', this.styles.Button);
-        this.styles.btStopCam = this.uiStateStyle('cam', this.styles.Button);
-        this.styles.msgWait = this.uiStateStyle('wait', this.styles.message);
+        // object assign shorthand
+        this.styles = { ...this.styles, ...this.compStates.map(item => {
+            return ( {[item.name]: this.uiStateStyle(item.includeIn, this.styles[item.basedOn]) } )
+        }) };
     }
 
     /**
@@ -257,11 +268,11 @@ class SnaprButtonBar extends React.Component {
      * @param styleBase
      * @returns {*}
      */
-    uiStateStyle(includeIn, styleBase) {
-        return Object.assign({}, styleBase, this.displayInState(includeIn))
+    uiStateStyle = (includeIn, styleBase) => {
+        return { ...styleBase, ...this.displayInState(includeIn)};
     }
 
-    displayInState(uiState) {
+    displayInState = (uiState) => {
         return this.props.currentState == uiState ? this.styles.visible : this.styles.hidden
     }
 
