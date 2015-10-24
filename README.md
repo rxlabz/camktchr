@@ -1,10 +1,9 @@
 # CamKtch
 
-[React](https://facebook.github.io/react/) (ES6+/7 [Babel](https://babeljs.io/) stage 0) experiments
-A prototype component to capture and save webcam picture
+[React](https://facebook.github.io/react/) (ES6+/7 [Babel](https://babeljs.io/) stage 0) experiment
 
+Component to capture and save webcam picture [Demo](http://www.rxlabz.com/labz/camktch)
 ![CamKtch](https://www.evernote.com/l/AAHAh5qla-RLB6g-brj9ADA-7Xb98PoWjxgB/image.png)
-
 
 ## Install
 
@@ -21,5 +20,10 @@ via npm script : npm *dev* script launch webpack-dev-server with hot-reload
 
 ```bash
 npm run dev
+```
+
+Production
+```bash
+npm run prod
 ```
 

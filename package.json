@@ -23,6 +23,7 @@
   },
   "scripts": {
     "build": "webpack",
+    "prod": "webpack -p",
     "dev": "webpack-dev-server --progress --colors --content-base ./build --hot --inline ; cp src/index.html build/index.html"
   }
 }
