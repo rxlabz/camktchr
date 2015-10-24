@@ -1,43 +1,22 @@
-# CamKtch
+# CamKtchr
 
-[React](https://facebook.github.io/react/) / ES6+ /7 prototypal component to capture and save webcam picture
+[React](https://facebook.github.io/react/) (ES6+/7 [Babel](https://babeljs.io/) stage 0) experiments
+A prototype component to capture and save webcam picture
 
-## Installation
-
-**NPM**
-Dependencies : babel-runtime, react, react-dom, underscore, webpack-dev-server
-cf package.json
+## Install
 
 ```bash
 npm install
 ```
 
-+ [babel](https://babeljs.io/)
-	+ .babelrc : stage 0 , optional runtime
-+ webpack
-	+ webpack.config.js
-
-
-
+Dependencies : babel-runtime, react, react-dom, underscore
+DevDependencies : babel-core, babel-loader,file-loader
 
 ## Run
 
-+ via babel
+via npm script : npm *dev* script launch webpack-dev-server with hot-reload 
+
 ```bash
-$ git 
+npm run dev
 ```
 
-+ via webpack
-```bash
-$ webpack-dev-server --progress --colors --content-base ./build --hot --inline
-```
-
-
-+ via npm + webpack
-```bash
-$ npm run dev
-```
-ou 
-```bash
-$ npm run build
-```

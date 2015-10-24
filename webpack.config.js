@@ -33,11 +33,11 @@ module.exports = {
                 test: /\.jsx?$/,
                 loaders: ["react-hot","babel-loader"],
                 exclude: /node_modules/
-            },
+            }/*,
             {
                 test: /\.html$/,
                 loader: 'file?name=[name].[ext]'
-            }
+            }*/
         ]
     },
 plugins:[

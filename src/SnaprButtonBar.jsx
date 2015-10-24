@@ -77,7 +77,7 @@ export default class SnaprButtonBar extends React.Component {
 
         return (
             <div style={this.styles.ButtonBar}>
-                <span>CamKtch</span>
+                <span>CamKatch</span>
                     <span style={this.styles.ButtonGroup}>
 
                         <span style={this.styles.msgWait}>Camera Initialization...</span>
