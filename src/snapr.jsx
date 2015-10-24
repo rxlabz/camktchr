@@ -46,7 +46,7 @@ export default class Snapr extends React.Component {
     }
 
     get canvas() {
-        return this.refs ? this.ref.canvas : null;
+        return this.refs ? this.refs.canvas : null;
     }
 
     set canvas(c){
