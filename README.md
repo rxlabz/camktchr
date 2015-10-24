@@ -5,6 +5,8 @@
 Component to capture and save webcam picture [Demo](http://www.rxlabz.com/labz/camktch)
 ![CamKtch](https://www.evernote.com/l/AAHAh5qla-RLB6g-brj9ADA-7Xb98PoWjxgB/image.png)
 
+Supported browser : Chrome, Firefox, Edge, Opera [cf. caniuse](http://caniuse.com/#search=getUserMedia)
+
 ## Install
 
 ```bash
