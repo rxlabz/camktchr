@@ -13,13 +13,9 @@ Supported browser : Chrome, Firefox, Edge, Opera [cf. caniuse](http://caniuse.co
 npm install
 ```
 
-Dependencies : babel-runtime, react, react-dom, underscore
-
-DevDependencies : babel-core, babel-loader,file-loader
-
 ## Run
 
-via npm script : npm *dev* script launch webpack-dev-server with hot-reload 
+via npm scripts cf. package.json 
 
 ```bash
 npm run dev
