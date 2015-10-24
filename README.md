@@ -21,8 +21,3 @@ via npm scripts cf. package.json
 npm run dev
 ```
 
-Production
-```bash
-npm run prod
-```
-
