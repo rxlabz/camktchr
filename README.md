@@ -1,7 +1,10 @@
-# CamKtchr
+# CamKtch
 
 [React](https://facebook.github.io/react/) (ES6+/7 [Babel](https://babeljs.io/) stage 0) experiments
 A prototype component to capture and save webcam picture
+
+![CamKtch](https://www.evernote.com/l/AAHAh5qla-RLB6g-brj9ADA-7Xb98PoWjxgB/image.png)
+
 
 ## Install
 
